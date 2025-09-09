@@ -1,38 +1,23 @@
-# scripts/helpers.R
 
-suppressPackageStartupMessages({
-  library(dplyr)
-  library(purrr)
-})
+# Funções auxiliares (preencher conforme necessidade)
 
-# starts_with_any: testa se x começa com qualquer prefixo
 starts_with_any <- function(x, prefixes) {
-  if (length(prefixes) == 0) return(rep(FALSE, length(x)))
-  Reduce(`|`, lapply(prefixes, function(p) startsWith(as.character(x), p)))
+  any(startsWith(x, prefixes))
 }
 
-# função auxiliar interna: extrai ano se coluna existir
-.year_from_col <- function(df, col) {
-  if (col %in% names(df)) {
-    suppressWarnings(as.integer(substr(as.character(df[[col]]), 1, 4)))
+derive_ano <- function(df, coluna = NULL) {
+  # Se não houver coluna de ano, tenta inferir
+  if (is.null(coluna) || !coluna %in% names(df)) {
+    if ("DT_INTER" %in% names(df)) {
+      df$ano <- lubridate::year(lubridate::ymd(df$DT_INTER))
+    } else if ("ANO" %in% names(df)) {
+      df$ano <- df$ANO
+    } else {
+      df$ano <- NA_integer_
+    }
   } else {
-    rep(NA_integer_, nrow(df))
+    df$ano <- df[[coluna]]
   }
+  df
 }
 
-# derive_ano: cria coluna .ano com o 1º ano válido
-derive_ano <- function(df) {
-  y1 <- .year_from_col(df, "ANO_CMPT")
-  y2 <- .year_from_col(df, "MES_CMPT")
-  y3 <- .year_from_col(df, "PA_CMP")
-  y4 <- .year_from_col(df, "DTOBITO")
-  df %>% mutate(.ano = coalesce(y1, y2, y3, y4))
-  cols <- c("ANO_CMPT", "MES_CMPT", "PA_CMP", "DTOBITO")
-  anos <- map(cols, ~ .year_from_col(df, .x))
-  df %>% mutate(.ano = Reduce(coalesce, anos))
-}
-
-# fetch_by_years
-fetch_by_years <- function(anos, fetch_fun, ufs = NULL) {
-  map_dfr(anos, ~fetch_fun(.x, ufs = ufs))
-}
