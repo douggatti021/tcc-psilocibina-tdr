@@ -27,6 +27,9 @@ derive_ano <- function(df) {
   y3 <- .year_from_col(df, "PA_CMP")
   y4 <- .year_from_col(df, "DTOBITO")
   df %>% mutate(.ano = coalesce(y1, y2, y3, y4))
+  cols <- c("ANO_CMPT", "MES_CMPT", "PA_CMP", "DTOBITO")
+  anos <- map(cols, ~ .year_from_col(df, .x))
+  df %>% mutate(.ano = Reduce(coalesce, anos))
 }
 
 # fetch_by_years
