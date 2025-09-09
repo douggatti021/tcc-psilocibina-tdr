@@ -1,23 +1,8 @@
-# macOS
-.DS_Store
-
-# R / RStudio
+.Rproj.user/
 .Rhistory
-.Rapp.history
 .RData
 .Ruserdata
-.Rproj.user/
-
-# Projeto
-dados/
+.Rprofile
+.DS_Store
 cache_rds/
-resultados/*.csv
-resultados/*.tsv
-resultados/*.rds
-saida_dados/
-*.xlsx
-*.xls
-
-# renv (se usar depois)
-renv/library/
-renv/staging/
+dados/
