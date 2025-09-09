@@ -1,43 +1,42 @@
 # scripts/helpers.R
+# Funções utilitárias usadas pela pipeline
+
 suppressPackageStartupMessages({
   library(dplyr)
-  library(stringr)
-  library(lubridate)
-  library(readr)
-  library(tidyr)
   library(purrr)
 })
 
-# Identifica se um texto começa com QUALQUER um dos prefixos fornecidos
+# starts_with_any: testa se x começa com qualquer prefixo de 'prefixes'
 starts_with_any <- function(x, prefixes) {
-  patt <- paste0("^(", paste0(prefixes, collapse="|"), ")")
-  str_detect(x, regex(patt, ignore_case = TRUE))
+  if (length(prefixes) == 0) return(rep(FALSE, length(x)))
+  Reduce(`|`, lapply(prefixes, function(p) startsWith(as.character(x), p)))
 }
 
-# Extrai "ano" a partir de várias colunas possíveis (robusto a formatos comuns)
-derive_ano <- function(df, cols = c("ANO_CMPT","MES_CMPT","PA_CMP","DTOBITO")) {
+# Função auxiliar: extrai ano (YYYY) de uma coluna se ela existir; senão devolve NAs
+.year_from_col <- function(df, col) {
+  if (col %in% names(df)) {
+    suppressWarnings(as.integer(substr(as.character(df[[col]]), 1, 4)))
+  } else {
+    rep(NA_integer_, nrow(df))
+  }
+}
+
+# derive_ano: cria coluna .ano pegando o 1º ano disponível entre várias colunas
+derive_ano <- function(df) {
+  y1 <- .year_from_col(df, "ANO_CMPT")
+  y2 <- .year_from_col(df, "MES_CMPT")
+  y3 <- .year_from_col(df, "PA_CMP")
+  y4 <- .year_from_col(df, "DTOBITO")
   df %>%
-    mutate(
-      .ano = coalesce(
-        suppressWarnings(as.integer(.data$ANO_CMPT)),
-        suppressWarnings(as.integer(substr(.data$MES_CMPT %||% "", 1, 4))),
-        suppressWarnings(as.integer(substr(.data$PA_CMP   %||% "", 1, 4))),
-        suppressWarnings(year(ymd(.data$DTOBITO %||% NA_character_)))
-      )
-    )
+    mutate(.ano = coalesce(y1, y2, y3, y4))
 }
 
-# (stub) Converte código IBGE (7 dígitos) para UF; preencher depois com tabela IBGE
-muni_to_uf_sigla <- function(cod_mun) {
-  # TODO: trocar por join com tabela oficial do IBGE
-  rep(NA_character_, length(cod_mun))
+# fetch_by_years: aplica uma função de busca/ingestão ano a ano e concatena
+fetch_by_years <- function(anos, fetch_fun, ufs = NULL) {
+  map_dfr(anos, ~fetch_fun(.x, ufs = ufs))
 }
 
-# Função genérica para baixar e empilhar por anos (você pluga a função de download)
-fetch_by_years <- function(anos, fetch_fun, ..., sleep = 0) {
-  purrr::map_dfr(anos, function(a) {
-    message("Baixando ano: ", a)
-    Sys.sleep(sleep)
-    fetch_fun(ano = a, ...) %>% mutate(.ano_ref = a)
-  })
+# (stub) muni_to_uf_sigla: mantém UF se já existir; caso contrário preenche NA
+muni_to_uf_sigla <- function(cod_mun, fallback_uf = NA_character_) {
+  rep(fallback_uf, length(cod_mun))
 }
