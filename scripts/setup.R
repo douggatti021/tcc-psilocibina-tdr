@@ -1,0 +1,5 @@
+dirs <- c("dados","resultados","cache_rds","saida_dados")
+sapply(dirs, dir.create, showWarnings = FALSE)
+pkgs <- c("tidyverse","data.table","readr","ggplot2","openxlsx","remotes")
+to_install <- setdiff(pkgs, rownames(installed.packages()))
+if (length(to_install)) install.packages(to_install)
