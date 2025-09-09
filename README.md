@@ -85,17 +85,29 @@ Os dados exportados do R já são tabulados e anonimizados, prontos para:
 ---
 
 ## 8. Como executar
-Requisitos: R ≥ 4.3, RStudio (opcional), Homebrew (macOS).
 
-### 1) Clonar
+### 8.1 Pré-requisitos
+- **R ≥ 4.3** (RStudio opcional)
+- **Git** instalado
+- **macOS**: se for usar gráficos fora do RStudio, instale **XQuartz**
+
+---
+
+### 8.2 Clonar o repositório
 git clone https://github.com/douggatti021/tcc-psilocibina-tdr
 cd tcc-psilocibina-tdr
 
-### 2) Preparar ambiente
+---
+
+### 8.3 Preparar ambiente
 make setup   # ou: Rscript scripts/setup.R
 
-### 3) Rodar pipeline
+---
+
+### 8.4 Rodar pipeline
 make run     # ou: Rscript scripts/pipeline.R
+
+---
 
 ### Saídas
 - CSVs: `saida_dados/`
