@@ -7,7 +7,8 @@ suppressPackageStartupMessages({
 })
 
 source("scripts/setup.R")
-# source("scripts/helpers.R")  # opcional agora; vamos usar uma versão local e segura do derive_ano
+# NÃO vamos depender de helpers.R enquanto depuramos
+# source("scripts/helpers.R")
 
 # ========= versão LOCAL e SEGURA de derive_ano (ignora colunas ausentes) =========
 safe_derive_ano <- function(df) {
@@ -29,21 +30,21 @@ safe_derive_ano <- function(df) {
 # ========= Parâmetros do estudo =========
 anos_ini   <- 2015
 anos_fim   <- 2024
-ufs        <- NULL            # ex.: c("SP","RJ") para filtrar; NULL = Brasil
+ufs        <- NULL            # ex.: c("SP","RJ"); NULL = Brasil
 write_csvs <- TRUE
 write_xlsx <- TRUE
 xlsx_path  <- file.path("resultados", "datasus_f32_f33_uf_ano.xlsx")
 
-# ========= Funções de ingestão (mocks para teste) =========
+# ========= Funções de ingestão (mocks p/ teste local) =========
 fetch_sih_mock <- function(ano, ufs = NULL) {
   base_ufs <- if (is.null(ufs)) c("SP","RJ","MG") else ufs
   tibble(
     UF         = base_ufs,
     DIAS       = sample(1:15, length(base_ufs), replace = TRUE),
     GASTO      = runif(length(base_ufs), 1e5, 5e5),
-    DIAG_PRINC = sample(c("F320","F321","F330","F331"), size = length(base_ufs), replace = TRUE),
+    DIAG_PRINC = sample(c("F320","F321","F330","F331"), length(base_ufs), TRUE),
     ANO_CMPT   = ano,
-    MES_CMPT   = sprintf("%d%02d", ano, 1)   # compatível com derive_ano
+    MES_CMPT   = sprintf("%d%02d", ano, 1)   # <— compatível com safe_derive_ano
   )
 }
 
@@ -51,8 +52,8 @@ fetch_sia_mock <- function(ano, ufs = NULL) {
   base_ufs <- if (is.null(ufs)) c("SP","RJ","MG") else ufs
   tibble(
     UF        = base_ufs,
-    ATEND     = sample(50:300, length(base_ufs), replace = TRUE),
-    PA_CIDPRI = sample(c("F320","F330","F332"), size = length(base_ufs), replace = TRUE),
+    ATEND     = sample(50:300, length(base_ufs), TRUE),
+    PA_CIDPRI = sample(c("F320","F330","F332"), length(base_ufs), TRUE),
     PA_CMP    = sprintf("%d%02d", ano, 1)
   )
 }
@@ -61,8 +62,8 @@ fetch_sim_mock <- function(ano, ufs = NULL) {
   base_ufs <- if (is.null(ufs)) c("SP","RJ","MG") else ufs
   tibble(
     UF       = base_ufs,
-    OBITOS   = sample(5:80, length(base_ufs), replace = TRUE),
-    CAUSABAS = sample(c("F320","F330"), size = length(base_ufs), replace = TRUE),
+    OBITOS   = sample(5:80, length(base_ufs), TRUE),
+    CAUSABAS = sample(c("F320","F330"), length(base_ufs), TRUE),
     DTOBITO  = sprintf("%d-01-01", ano)
   )
 }
@@ -70,9 +71,10 @@ fetch_sim_mock <- function(ano, ufs = NULL) {
 anos <- seq.int(anos_ini, anos_fim)
 
 # ========= SIH-RD =========
-sih_raw <- map_dfr(anos, ~fetch_sih_mock(.x, ufs = ufs))
+sih_raw <- purrr::map_dfr(anos, ~fetch_sih_mock(.x, ufs = ufs))
 sih <- sih_raw %>%
-  filter(startsWith(as.character(DIAG_PRINC), "F32") | startsWith(as.character(DIAG_PRINC), "F33")) %>%
+  filter(startsWith(as.character(DIAG_PRINC), "F32") |
+         startsWith(as.character(DIAG_PRINC), "F33")) %>%
   safe_derive_ano() %>%
   group_by(UF, .ano) %>%
   summarise(
@@ -83,17 +85,19 @@ sih <- sih_raw %>%
   )
 
 # ========= SIA-PA =========
-sia_raw <- map_dfr(anos, ~fetch_sia_mock(.x, ufs = ufs))
+sia_raw <- purrr::map_dfr(anos, ~fetch_sia_mock(.x, ufs = ufs))
 sia <- sia_raw %>%
-  filter(startsWith(as.character(PA_CIDPRI), "F32") | startsWith(as.character(PA_CIDPRI), "F33")) %>%
+  filter(startsWith(as.character(PA_CIDPRI), "F32") |
+         startsWith(as.character(PA_CIDPRI), "F33")) %>%
   safe_derive_ano() %>%
   group_by(UF, .ano) %>%
   summarise(atendimentos = sum(ATEND, na.rm = TRUE), .groups = "drop")
 
 # ========= SIM-DO =========
-sim_raw <- map_dfr(anos, ~fetch_sim_mock(.x, ufs = ufs))
+sim_raw <- purrr::map_dfr(anos, ~fetch_sim_mock(.x, ufs = ufs))
 sim <- sim_raw %>%
-  filter(startsWith(as.character(CAUSABAS), "F32") | startsWith(as.character(CAUSABAS), "F33")) %>%
+  filter(startsWith(as.character(CAUSABAS), "F32") |
+         startsWith(as.character(CAUSABAS), "F33")) %>%
   safe_derive_ano() %>%
   group_by(UF, .ano) %>%
   summarise(obitos = sum(OBITOS, na.rm = TRUE), .groups = "drop")
