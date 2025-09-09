@@ -82,6 +82,25 @@ Os dados exportados do R já são tabulados e anonimizados, prontos para:
 - Perda de granularidade mensal devido à agregação anual  
 - Dependência de disponibilidade dos servidores do DATASUS  
 
+---
+
+## 8. Como executar
+Requisitos: R ≥ 4.3, RStudio (opcional), Homebrew (macOS).
+
+### 1) Clonar
+git clone https://github.com/douggatti021/tcc-psilocibina-tdr
+cd tcc-psilocibina-tdr
+
+### 2) Preparar ambiente
+make setup   # ou: Rscript scripts/setup.R
+
+### 3) Rodar pipeline
+make run     # ou: Rscript scripts/pipeline.R
+
+### Saídas
+- CSVs: `saida_dados/`
+- Excel: `resultados/datasus_f32_f33_uf_ano.xlsx`
+
 ## Referências
 
 - BRASIL. Ministério da Saúde. [DATASUS – Departamento de Informática do SUS](https://datasus.saude.gov.br/). Acesso em: 8 set. 2025.  
