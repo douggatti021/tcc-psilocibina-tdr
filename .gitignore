@@ -6,3 +6,19 @@
 .DS_Store
 cache_rds/
 dados/
+# Dados e resultados gerados
+saida_dados/
+resultados/
+tmp_logs/
+
+# Ambiente renv local
+renv/library/
+renv/staging/
+# R/RStudio & SO
+*.Rhistory
+*.RData
+*.tmp
+*.log
+# Credenciais locais (se usar)
+.env
+.Renviron
